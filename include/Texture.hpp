@@ -36,8 +36,10 @@ private:
     void createGLTexture();
     void release();
     bool loadFromPixels();
+    bool loadBMP(const std::string& filepath);
 #ifdef _WIN32
     bool loadWithWIC(const std::string& filepath);
+#else
+    bool loadWithStb(const std::string& filepath);
 #endif
-    bool loadBMP(const std::string& filepath);
 };

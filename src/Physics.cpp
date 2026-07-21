@@ -41,8 +41,9 @@ void PhysicsWorld::addPoint(float x, float y) {
     points.push_back({ {x, y}, {x, y}, {0, 0}, false, true });
 }
 
-void PhysicsWorld::addBody(float x, float y, float w, float h, BodyType type) {
+int PhysicsWorld::addBody(float x, float y, float w, float h, BodyType type) {
     bodies.push_back({ {x, y}, {w, h}, {0, 0}, type, true });
+    return (int)bodies.size() - 1;
 }
 
 int PhysicsWorld::addBody(const PhysicsBody& body) {

@@ -1,5 +1,7 @@
 #include "../include/GLFunctions.hpp"
 
+#ifdef _WIN32
+
 PFNGLCREATESHADERPROC glCreateShader = nullptr;
 PFNGLSHADERSOURCEPROC glShaderSource = nullptr;
 PFNGLCOMPILESHADERPROC glCompileShader = nullptr;
@@ -22,6 +24,8 @@ PFNGLUNIFORM4FPROC glUniform4f = nullptr;
 PFNGLUNIFORM1FPROC glUniform1f = nullptr;
 PFNGLUNIFORM1IPROC glUniform1i = nullptr;
 PFNGLUNIFORMMATRIX4FVPROC glUniformMatrix4fv = nullptr;
+PFNGLDETACHSHADERPROC glDetachShader = nullptr;
+PFNGLDELETESHADERPROC glDeleteShader = nullptr;
 PFNGLDELETEPROGRAMPROC glDeleteProgram = nullptr;
 PFNGLDELETEBUFFERSPROC glDeleteBuffers = nullptr;
 PFNGLDELETEVERTEXARRAYSPROC glDeleteVertexArrays = nullptr;
@@ -52,6 +56,8 @@ void LoadGLFunctions() {
     glUniform1f = (PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f");
     glUniform1i = (PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i");
     glUniformMatrix4fv = (PFNGLUNIFORMMATRIX4FVPROC)wglGetProcAddress("glUniformMatrix4fv");
+    glDetachShader = (PFNGLDETACHSHADERPROC)wglGetProcAddress("glDetachShader");
+    glDeleteShader = (PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader");
     glDeleteProgram = (PFNGLDELETEPROGRAMPROC)wglGetProcAddress("glDeleteProgram");
     glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)wglGetProcAddress("glDeleteBuffers");
     glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC)wglGetProcAddress("glDeleteVertexArrays");
@@ -59,3 +65,11 @@ void LoadGLFunctions() {
     glActiveTexture = (PFNGLACTIVETEXTUREPROC)wglGetProcAddress("glActiveTexture");
     glGenerateMipmap = (PFNGLGENERATEMIPMAPPROC)wglGetProcAddress("glGenerateMipmap");
 }
+
+#else
+
+void LoadGLFunctions() {
+    // Linux: GL functions are resolved at link time via libGL.so
+}
+
+#endif

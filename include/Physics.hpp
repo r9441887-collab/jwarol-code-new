@@ -36,7 +36,7 @@ public:
 
     void step(float dt);
     void addPoint(float x, float y);
-    void addBody(float x, float y, float w, float h, BodyType type = BodyType::DYNAMIC);
+    int addBody(float x, float y, float w, float h, BodyType type = BodyType::DYNAMIC);
     int addBody(const PhysicsBody& body);
     void removeBody(int index);
 

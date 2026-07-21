@@ -9,6 +9,8 @@
 #ifdef _WIN32
 #include <wincodec.h>
 #include <objbase.h>
+#else
+#include "stb_image.h"
 #endif
 
 Texture::Texture() : textureID(0), width(0), height(0), channels(4) {}
@@ -98,8 +100,7 @@ bool Texture::load(const std::string& filepath) {
 #ifdef _WIN32
     return loadWithWIC(filepath);
 #else
-    if (ext == ".png" || ext == ".jpg" || ext == ".jpeg") return false;
-    return false;
+    return loadWithStb(filepath);
 #endif
 }
 
@@ -120,7 +121,6 @@ bool Texture::loadBMP(const std::string& filepath) {
     f.read((char*)header, 54);
     if (header[0] != 'B' || header[1] != 'M') return false;
 
-    int dataOffset = *(int*)&header[10];
     width = *(int*)&header[18];
     height = *(int*)&header[22];
     int bpp = *(short*)&header[28];
@@ -136,9 +136,9 @@ bool Texture::loadBMP(const std::string& filepath) {
         for (int x = 0; x < width; x++) {
             int srcIdx = x * (bpp / 8);
             int dstIdx = (y * width + x) * channels;
-            pixels[dstIdx + 2] = row[srcIdx + 0]; // B
-            pixels[dstIdx + 1] = row[srcIdx + 1]; // G
-            pixels[dstIdx + 0] = row[srcIdx + 2]; // R
+            pixels[dstIdx + 2] = row[srcIdx + 0];
+            pixels[dstIdx + 1] = row[srcIdx + 1];
+            pixels[dstIdx + 0] = row[srcIdx + 2];
             if (channels == 4) pixels[dstIdx + 3] = row[srcIdx + 3];
         }
     }
@@ -188,6 +188,21 @@ bool Texture::loadWithWIC(const std::string& filepath) {
     if (pixels.empty()) return loadBMP(filepath);
     return createGLTexture(), true;
 }
+#else
+bool Texture::loadWithStb(const std::string& filepath) {
+    int w, h, ch;
+    stbi_set_flip_vertically_on_load(0);
+    unsigned char* data = stbi_load(filepath.c_str(), &w, &h, &ch, 4);
+    if (!data) return false;
+
+    width = w;
+    height = h;
+    channels = 4;
+    pixels.assign(data, data + w * h * 4);
+    stbi_image_free(data);
+
+    return createGLTexture(), true;
+}
 #endif
 
 Texture Texture::overlay(const Texture& other, int x, int y, float alpha) const {
@@ -209,7 +224,8 @@ Texture Texture::overlay(const Texture& other, int x, int y, float alpha) const 
             result.pixels[dstIdx + 0] = (unsigned char)(other.pixels[srcIdx + 0] * sa + result.pixels[dstIdx + 0] * da);
             result.pixels[dstIdx + 1] = (unsigned char)(other.pixels[srcIdx + 1] * sa + result.pixels[dstIdx + 1] * da);
             result.pixels[dstIdx + 2] = (unsigned char)(other.pixels[srcIdx + 2] * sa + result.pixels[dstIdx + 2] * da);
-            result.pixels[dstIdx + 3] = (unsigned char)(255);
+            float dstA = result.pixels[dstIdx + 3] / 255.0f;
+            result.pixels[dstIdx + 3] = (unsigned char)((sa + dstA * da) * 255.0f);
         }
     }
     result.createGLTexture();
@@ -232,9 +248,6 @@ std::vector<Texture> Texture::loadAll(const std::string& directory) {
 bool Texture::isSupported(const std::string& filepath) {
     auto ext = std::filesystem::path(filepath).extension().string();
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-    return ext == ".bmp"
-#ifdef _WIN32
-        || ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".gif" || ext == ".tiff"
-#endif
-    ;
+    return ext == ".bmp" || ext == ".png" || ext == ".jpg" || ext == ".jpeg"
+        || ext == ".gif" || ext == ".tga" || ext == ".psd";
 }

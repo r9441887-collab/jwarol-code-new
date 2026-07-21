@@ -15,7 +15,30 @@ static unsigned int linkProgram(unsigned int vShader, unsigned int fShader) {
     glAttachShader(prog, vShader);
     glAttachShader(prog, fShader);
     glLinkProgram(prog);
+    glDetachShader(prog, vShader);
+    glDetachShader(prog, fShader);
+    glDeleteShader(vShader);
+    glDeleteShader(fShader);
     return prog;
+}
+
+static void orthoMatrix(float* out, float l, float r, float b, float t) {
+    out[0]  =  2.0f / (r - l);
+    out[1]  =  0.0f;
+    out[2]  =  0.0f;
+    out[3]  =  0.0f;
+    out[4]  =  0.0f;
+    out[5]  =  2.0f / (t - b);
+    out[6]  =  0.0f;
+    out[7]  =  0.0f;
+    out[8]  =  0.0f;
+    out[9]  =  0.0f;
+    out[10] = -1.0f;
+    out[11] =  0.0f;
+    out[12] = -(r + l) / (r - l);
+    out[13] = -(t + b) / (t - b);
+    out[14] =  0.0f;
+    out[15] =  1.0f;
 }
 
 Renderer::Renderer(float width, float height) : screenW(width), screenH(height) {
@@ -32,9 +55,10 @@ Renderer::Renderer(float width, float height) : screenW(width), screenH(height) 
 #version 330 core
 layout(location = 0) in vec2 aPos;
 layout(location = 1) in vec2 aTex;
+uniform mat4 uProj;
 out vec2 vTex;
 void main() {
-    gl_Position = vec4(aPos, 0.0, 1.0);
+    gl_Position = uProj * vec4(aPos, 0.0, 1.0);
     vTex = aTex;
 }
 )";
@@ -55,8 +79,9 @@ void main() {
     const char* rectVS = R"(
 #version 330 core
 layout(location = 0) in vec3 aPos;
+uniform mat4 uProj;
 void main() {
-    gl_Position = vec4(aPos, 1.0);
+    gl_Position = uProj * vec4(aPos, 1.0);
 }
 )";
     const char* rectFS = R"(
@@ -90,6 +115,11 @@ void Renderer::draw_rect(float x, float y, float w, float h, float r, float g, f
     };
 
     glUseProgram(rectProgram);
+
+    float proj[16];
+    orthoMatrix(proj, 0, screenW, screenH, 0);
+    glUniformMatrix4fv(glGetUniformLocation(rectProgram, "uProj"), 1, GL_FALSE, proj);
+
     int colorLoc = glGetUniformLocation(rectProgram, "uColor");
     glUniform4f(colorLoc, r, g, b, 1.0f);
 
@@ -112,6 +142,11 @@ void Renderer::draw_texture(Texture& tex, float x, float y, float w, float h, fl
     };
 
     glUseProgram(texProgram);
+
+    float proj[16];
+    orthoMatrix(proj, 0, screenW, screenH, 0);
+    glUniformMatrix4fv(glGetUniformLocation(texProgram, "uProj"), 1, GL_FALSE, proj);
+
     glUniform1f(glGetUniformLocation(texProgram, "uAlpha"), alpha);
 
     tex.bind(0);
@@ -145,6 +180,11 @@ void Renderer::draw_texture_ex(Texture& tex, float x, float y, float w, float h,
     };
 
     glUseProgram(texProgram);
+
+    float proj[16];
+    orthoMatrix(proj, 0, screenW, screenH, 0);
+    glUniformMatrix4fv(glGetUniformLocation(texProgram, "uProj"), 1, GL_FALSE, proj);
+
     glUniform1f(glGetUniformLocation(texProgram, "uAlpha"), alpha);
 
     tex.bind(0);
